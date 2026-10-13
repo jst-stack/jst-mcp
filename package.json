@@ -1,0 +1,67 @@
+{
+  "name": "@jst-stack/mcp",
+  "version": "0.1.0",
+  "description": "MCP server and Pi extension for JST architecture workflows: start tasks, scaffold slices, surface recipes, and run quality gates.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jst-stack/jst-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jst-stack/jst-mcp/issues"
+  },
+  "homepage": "https://github.com/jst-stack/jst-mcp#readme",
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "packageManager": "npm@11.6.2",
+  "bin": {
+    "jst-mcp": "dist/bin/jst-mcp.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./pi": {
+      "types": "./dist/pi/extension.d.ts",
+      "import": "./dist/pi/extension.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "test": "npm run build && vitest run",
+    "check": "npm run lint && npm test && npm pack --dry-run",
+    "prepublishOnly": "npm run check"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "typebox": "^1.1.38",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.4",
+    "eslint": "^10.10.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^4.1.11"
+  },
+  "keywords": [
+    "mcp",
+    "jst",
+    "architecture",
+    "react",
+    "ssr",
+    "model-context-protocol",
+    "pi"
+  ]
+}
