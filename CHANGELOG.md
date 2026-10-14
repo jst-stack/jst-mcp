@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Pin mature Zod and TypeBox releases so JST's seven-day pnpm supply-chain policy accepts clean generated projects.
+
 ## 0.1.0
 
 - Provide client-neutral MCP tools for task guidance, slice scaffolding, architecture recipes, and quality gates.

@@ -1,6 +1,6 @@
 {
   "name": "@jst-stack/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server and Pi extension for JST architecture workflows: start tasks, scaffold slices, surface recipes, and run quality gates.",
   "type": "module",
   "license": "MIT",
@@ -44,8 +44,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
-    "typebox": "^1.1.38",
-    "zod": "^4.6.7"
+    "typebox": "1.3.35",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
