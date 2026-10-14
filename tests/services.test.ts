@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { JstServices } from "../src/application/services.js";
 import type { CommandResult, CommandRunner, ProjectAccess } from "../src/application/ports.js";
@@ -128,6 +129,9 @@ const JST_SCRIPTS: Record<string, string> = {
   "check:release": "npm run check && npm run test:e2e",
 };
 
+const WORK_ROOT = resolve("/work");
+const NPM_COMMAND = process.platform === "win32" ? "npm.cmd" : "npm";
+
 function make(runner = new RecordingRunner(), project: ProjectAccess = new FakeProject(JST_SCRIPTS)) {
   return new JstServices(runner, project, "/work");
 }
@@ -138,7 +142,7 @@ describe("jst_start_task", () => {
     runner.respond({ exitCode: 0, stdout: HELP, stderr: "", timedOut: false });
     const result = await make(runner).startTask({ projectRoot: ".", brief: "create a new checkout feature with an optimistic mutation" });
     expect(result.project.name).toBe("fake-jst");
-    expect(result.project.root).toBe("/work");
+    expect(result.project.root).toBe(WORK_ROOT);
     expect(result.taskKind).toBe("new-boundary");
     expect(result.agentRules).toContainEqual(expect.stringContaining("do not reread"));
     expect(result.agentRules).toContainEqual(expect.stringContaining("current owner"));
@@ -251,9 +255,9 @@ describe("jst_scaffold_slice", () => {
     expect(runner.calls[0]!.args).toEqual(["run", "create:slice", "--", "entity", "account", "--repository", "--tests", "--dry-run"]);
     expect(runner.calls[1]!.args).toEqual(["run", "create:slice", "--", "entity", "account", "--repository", "--tests", "--yes"]);
     for (const call of runner.calls) {
-      expect(call.command).toBe("npm");
+      expect(call.command).toBe(NPM_COMMAND);
       expect(call.args.every((arg) => !/\s/u.test(arg))).toBe(true);
-      expect(call.options.cwd).toBe("/work");
+      expect(call.options.cwd).toBe(WORK_ROOT);
     }
   });
 
