@@ -41,5 +41,13 @@ jobs:
           npm view "$package_name@$package_version" version && echo "published=true" >> "$GITHUB_OUTPUT" || true
       - if: ${{ steps.registry.outputs.published != 'true' }}
         run: npm publish --provenance --access public
+      - name: Verify the published package
+        run: |
+          package="$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")"
+          for attempt in {1..12}; do
+            npm view "$package" version dist.integrity dist.attestations && exit 0
+            [ "$attempt" -eq 12 ] && exit 1
+            sleep 15
+          done
       - name: Create GitHub release
         run: gh release view "$GITHUB_REF_NAME" || gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
