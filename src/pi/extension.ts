@@ -92,13 +92,14 @@ const stringEnum = (values: readonly string[]) => Type.Union(values.map((value) 
 
 export default function jstMcpExtension(pi: PiExtensionApi): void {
   const ports = createDefaultPorts();
-  let started = false;
+  let activeRoot: string | undefined;
 
-  pi.on?.("before_agent_start", async (event) => ({
-    systemPrompt: `${event.systemPrompt}\n\n${PI_JST_WORKFLOW}`,
-  }));
-  pi.on?.("tool_call", (event) => blockedToolCall(started, event));
-  pi.on?.("before_provider_request", (event) => capProviderOutput(event.payload));
+  pi.on?.("before_agent_start", async (event) => {
+    activeRoot = undefined;
+    return { systemPrompt: `${event.systemPrompt}\n\n${PI_JST_WORKFLOW}` };
+  });
+  pi.on?.("tool_call", (event) => blockedToolCall(activeRoot !== undefined, event));
+  pi.on?.("before_provider_request", (event) => activeRoot ? capProviderOutput(event.payload) : event.payload);
 
   const servicesFor = (ctx?: PiContext): JstServices => new JstServices(ports.runner, ports.project, ctx?.cwd ?? process.cwd());
 
@@ -121,8 +122,9 @@ export default function jstMcpExtension(pi: PiExtensionApi): void {
       brief: Type.String({ description: "One-line description of the requested change." }),
     }),
     async execute(_id, params, _signal, _onUpdate, ctx) {
-      const result = await servicesFor(ctx).startTask({ projectRoot: rootFor(ctx, params.projectRoot), brief: params.brief as string });
-      started = true;
+      const projectRoot = rootFor(ctx, params.projectRoot);
+      const result = await servicesFor(ctx).startTask({ projectRoot, brief: params.brief as string });
+      activeRoot = projectRoot;
       return text(result);
     },
   });
