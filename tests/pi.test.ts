@@ -5,10 +5,12 @@ import type { PiExtensionApi, PiToolDefinition } from "../src/pi/extension.js";
 describe("Pi extension", () => {
   it("adds the efficient JST workflow to the system prompt", async () => {
     let handler: ((event: { systemPrompt: string }) => Promise<{ systemPrompt: string }> | { systemPrompt: string }) | undefined;
+    let providerHandler: ((event: { payload: unknown }) => unknown) | undefined;
     const api: PiExtensionApi = {
       registerTool(_tool: PiToolDefinition) {},
       on(event, value) {
         if (event === "before_agent_start") handler = value as typeof handler;
+        if (event === "before_provider_request") providerHandler = value as typeof providerHandler;
       },
     };
 
@@ -20,6 +22,7 @@ describe("Pi extension", () => {
     expect(result.systemPrompt).toContain("For local edits");
     expect(result.systemPrompt).toContain("Use jst_scaffold_slice only");
     expect(result.systemPrompt).toContain("do not run its internal stages separately");
+    expect(providerHandler!({ payload: { max_tokens: 32_768 } })).toEqual({ max_tokens: 32_768 });
   });
 
   it("blocks duplicate JST discovery after a task starts", () => {

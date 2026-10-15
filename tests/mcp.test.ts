@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const binPath = resolve(process.cwd(), "dist", "bin", "jst-mcp.js");
 const skip = !existsSync(binPath);
+const packageVersion = (JSON.parse(readFileSync(resolve(process.cwd(), "package.json"), "utf8")) as { version: string }).version;
 
 const FIXTURE_SKILL = `# Frontend architecture
 
@@ -82,6 +83,7 @@ describe.skipIf(skip)("jst-mcp stdio black-box", () => {
     const init = await server.next();
     expect(init.id).toBe(0);
     expect(init.error).toBeUndefined();
+    expect((init.result as { serverInfo: { version: string } }).serverInfo.version).toBe(packageVersion);
 
     server.send({ jsonrpc: "2.0", method: "notifications/initialized" });
     server.send({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} });

@@ -1,11 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { readFileSync } from "node:fs";
 import { JstServices } from "../application/services.js";
 import { JstError } from "../domain/contracts.js";
 import { briefSchema, gateNameSchema, projectRootSchema, recipeNameSchema, sliceKindSchema, sliceNameSchema, sliceOptionsSchema } from "../domain/schemas.js";
 import { createDefaultPorts } from "../infrastructure/adapters.js";
 
-const VERSION = "0.1.0";
+const VERSION = (JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as { version: string }).version;
 
 function textResult(data: unknown): { content: { type: "text"; text: string }[] } {
   return { content: [{ type: "text", text: JSON.stringify(data) }] };
