@@ -80,8 +80,8 @@ function matchHeading(line: string, level: number): string | null {
   return line
     .slice(prefix.length)
     .trim()
-    .replace(/\s+#+\s*$/u, "")
-    .trim();
+    .replace(/\s+#+$/u, "")
+    .trimEnd();
 }
 
 function isHeadingAtMost(line: string, level: number): boolean {

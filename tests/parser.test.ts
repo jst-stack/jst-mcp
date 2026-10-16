@@ -66,6 +66,11 @@ describe("parseSections", () => {
     expect(sub.map((section) => section.name)).toEqual(["http-entity", "stateful-feature"]);
     expect(sub[0]!.body).toContain("**Intent:** A typed HTTP boundary.");
   });
+
+  it("strips optional closing hashes without backtracking on repeated spaces", () => {
+    const padding = " ".repeat(100_000);
+    expect(parseSections(`## Heading${padding}###\nbody`, 2)).toEqual([{ name: "Heading", body: "body" }]);
+  });
 });
 
 describe("parseNumberedList", () => {
