@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { ValidationError } from "../src/domain/contracts.js";
 import {
-  gateNameSchema, parseInput, parseSliceOptions, projectRootSchema, recipeInputSchema, recipeNameSchema,
-  scaffoldInputSchema, sliceKindSchema, sliceNameSchema, sliceOptionsSchema,
+  gateNameSchema,
+  parseInput,
+  parseSliceOptions,
+  projectRootSchema,
+  recipeInputSchema,
+  recipeNameSchema,
+  scaffoldInputSchema,
+  sliceKindSchema,
+  sliceNameSchema,
+  sliceOptionsSchema,
 } from "../src/domain/schemas.js";
 
 describe("input validation", () => {
@@ -47,6 +55,8 @@ describe("input validation", () => {
       name: "signup",
       options: undefined,
     });
-    expect(() => parseInput(scaffoldInputSchema, { projectRoot: "/p", kind: "widget", name: "Bad-Name" })).toThrow(/lowerCamelCase/u);
+    expect(() => parseInput(scaffoldInputSchema, { projectRoot: "/p", kind: "widget", name: "Bad-Name" })).toThrow(
+      /lowerCamelCase/u,
+    );
   });
 });

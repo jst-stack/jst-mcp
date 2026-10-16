@@ -15,7 +15,9 @@ export function parseSections(markdown: string, level = 2): MarkdownSection[] {
   let current: MarkdownSection | null = null;
 
   const push = () => {
-    if (current) sections.push({ name: current.name, body: current.body.trimEnd() });
+    if (current) {
+      sections.push({ name: current.name, body: current.body.trimEnd() });
+    }
     current = null;
   };
 
@@ -47,16 +49,23 @@ export function parseNumberedList(body: string): string[] {
   const items: string[] = [];
   for (const line of body.split(/\r?\n/u)) {
     const match = /^\s*\d+\.\s+(.+?)\s*$/u.exec(line);
-    if (match) items.push(match[1]!);
+    if (match) {
+      items.push(match[1]!);
+    }
   }
   return items.length > 0
     ? items
-    : body.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
+    : body
+        .split(/\r?\n/u)
+        .map((line) => line.trim())
+        .filter(Boolean);
 }
 
 /** Bound guidance to its leading `max` chars, preserving its intent and first rules. */
 export function boundText(text: string, max: number): { text: string; truncated: boolean } {
-  if (text.length <= max) return { text, truncated: false };
+  if (text.length <= max) {
+    return { text, truncated: false };
+  }
   return {
     text: `${text.slice(0, max)}\n...[truncated after ${max} chars]`,
     truncated: true,
@@ -65,8 +74,25 @@ export function boundText(text: string, max: number): { text: string; truncated:
 
 function matchHeading(line: string, level: number): string | null {
   const prefix = "#".repeat(level) + " ";
-  if (!line.startsWith(prefix)) return null;
-  return line.slice(prefix.length).trim().replace(/\s+#+\s*$/u, "").trim();
+  if (!line.startsWith(prefix)) {
+    return null;
+  }
+  return stripClosingHashes(line.slice(prefix.length));
+}
+
+function stripClosingHashes(text: string): string {
+  const trimmed = text.trim();
+  let hashStart = trimmed.length;
+  while (hashStart > 0 && trimmed[hashStart - 1] === "#") {
+    hashStart -= 1;
+  }
+  if (hashStart === trimmed.length || hashStart === 0) {
+    return trimmed;
+  }
+  const previous = trimmed[hashStart - 1];
+  return previous !== undefined && previous.trim() === ""
+    ? trimmed.slice(0, hashStart).trimEnd()
+    : trimmed;
 }
 
 function isHeadingAtMost(line: string, level: number): boolean {

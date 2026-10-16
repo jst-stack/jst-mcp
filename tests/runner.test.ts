@@ -26,10 +26,7 @@ describe("SpawnCommandRunner", () => {
 
   it("escalates SIGTERM to SIGKILL when the child ignores the graceful signal", async () => {
     const runner = new SpawnCommandRunner();
-    const script = [
-      "process.on('SIGTERM', () => {})",
-      "setInterval(() => {}, 1000)",
-    ].join(";");
+    const script = ["process.on('SIGTERM', () => {})", "setInterval(() => {}, 1000)"].join(";");
     const start = Date.now();
     const result = await runner.run(process.execPath, ["-e", script], { cwd: process.cwd(), timeoutMs: 150 });
     expect(result.timedOut).toBe(true);

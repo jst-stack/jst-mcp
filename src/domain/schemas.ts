@@ -40,7 +40,12 @@ export const sliceOptionsSchema = z
 
 export const startTaskInputSchema = z.object({ projectRoot: projectRootSchema, brief: briefSchema }).strict();
 export const scaffoldInputSchema = z
-  .object({ projectRoot: projectRootSchema, kind: sliceKindSchema, name: sliceNameSchema, options: sliceOptionsSchema.optional() })
+  .object({
+    projectRoot: projectRootSchema,
+    kind: sliceKindSchema,
+    name: sliceNameSchema,
+    options: sliceOptionsSchema.optional(),
+  })
   .strict();
 export const recipeInputSchema = z.object({ projectRoot: projectRootSchema, recipe: recipeNameSchema }).strict();
 export const checkInputSchema = z.object({ projectRoot: projectRootSchema, gate: gateNameSchema }).strict();
