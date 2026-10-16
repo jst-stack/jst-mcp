@@ -4,25 +4,37 @@
 import { SLICE_KINDS } from "./contracts.js";
 import type { GateName, RecipeName, TaskKind } from "./contracts.js";
 import type { MarkdownSection } from "./markdown.js";
+import { RECIPE_KEYWORDS, SECTION_KEYWORDS } from "./operationalMetadata.js";
 
 export const SKILL_RELATIVE_PATH = "skills/frontend-architecture/SKILL.md";
 
 export const GENERATOR_COMMAND = "npm run create:slice -- <kind> <lowerCamelName> [options]";
 
-const LOCAL_CHANGE = /\b(?:align|animation|button|card|colour|color|copy|css|element|font|gap|height|hover|layout|margin|padding|px|scss|size|spacing|style|text|transition|ui|width)\w*/iu;
+const LOCAL_CHANGE =
+  /\b(?:align|animation|button|card|colour|color|copy|css|element|font|gap|height|hover|layout|margin|padding|px|scss|size|spacing|style|text|transition|ui|width)\w*/iu;
 const LOCAL_CHANGE_RU = /(?:анимац|высот|карточ|кнопк|отступ|размер|стил|текст|цвет|ширин|элемент)\p{L}*/iu;
-const NEW_BOUNDARY = /\b(?:add|build|create|generate|implement|new|scaffold)\w*\b[\s\S]{0,50}\b(?:entity|feature|module|widget)\w*/iu;
+const NEW_BOUNDARY =
+  /\b(?:add|build|create|generate|implement|new|scaffold)\w*\b[\s\S]{0,50}\b(?:entity|feature|module|widget)\w*/iu;
 const NEW_BOUNDARY_RU = /(?:добав|нов|реализ|созда)\p{L}*[\s\S]{0,50}(?:сущност|фич|модул|виджет)\p{L}*/iu;
-const WORKFLOW_CHANGE = /\b(?:api|async|error|fetch|loading|mutation|optimistic|persist|repository|retry|rollback|state|storage)\w*/iu;
+const WORKFLOW_CHANGE =
+  /\b(?:api|async|error|fetch|loading|mutation|optimistic|persist|repository|retry|rollback|state|storage)\w*/iu;
 const WORKFLOW_CHANGE_RU = /(?:асинхрон|загрузк|запрос|мутац|ошибк|повтор|репозитор|состоян|сохран|хранилищ)\p{L}*/iu;
 const DIRECT_CHANGE = /\b(?:config|documentation|docs|readme|rename|typo)\w*/iu;
 const DIRECT_CHANGE_RU = /(?:документац|конфиг|опечатк|переимен)\p{L}*/iu;
 
 export function classifyTask(brief: string): TaskKind {
-  if (NEW_BOUNDARY.test(brief) || NEW_BOUNDARY_RU.test(brief)) return "new-boundary";
-  if (WORKFLOW_CHANGE.test(brief) || WORKFLOW_CHANGE_RU.test(brief)) return "existing-workflow";
-  if (DIRECT_CHANGE.test(brief) || DIRECT_CHANGE_RU.test(brief)) return "direct-change";
-  if (LOCAL_CHANGE.test(brief) || LOCAL_CHANGE_RU.test(brief)) return "local-change";
+  if (NEW_BOUNDARY.test(brief) || NEW_BOUNDARY_RU.test(brief)) {
+    return "new-boundary";
+  }
+  if (WORKFLOW_CHANGE.test(brief) || WORKFLOW_CHANGE_RU.test(brief)) {
+    return "existing-workflow";
+  }
+  if (DIRECT_CHANGE.test(brief) || DIRECT_CHANGE_RU.test(brief)) {
+    return "direct-change";
+  }
+  if (LOCAL_CHANGE.test(brief) || LOCAL_CHANGE_RU.test(brief)) {
+    return "local-change";
+  }
   return "existing-workflow";
 }
 
@@ -101,51 +113,40 @@ export const GATE_DEFINITIONS: Record<GateName, GateDefinition> = {
   },
 };
 
-// Section selection metadata: keyword lists only, no architecture prose.
-const SECTION_KEYWORDS: Record<string, string[]> = {
-  "Model first": ["model", "entity", "domain", "dto", "type", "invariant", "mapping", "repository", "state", "stateful", "reatom", "store", "viewmodel", "use case", "модел", "сущност", "домен", "репозитор", "состоян"],
-  "Ownership": ["page", "route", "feature", "module", "widget", "compose", "composition", "slice", "workflow", "страниц", "маршрут", "фич", "модул", "виджет", "срез"],
-  "DI boundary": ["di", "http", "adapter", "service", "provider", "fetch", "storage", "inject", "clock", "analytics", "адаптер", "сервис", "хранилищ", "инъекц"],
-  "Styling": ["style", "css", "scss", "sass", "component", "ui", "mantine", "classname", "стил", "компонент", "класс"],
-  "Delivery check": ["test", "check", "lint", "delivery", "release", "e2e", "error", "loading", "optimistic", "mutation", "async", "playwright", "тест", "ошибк", "загрузк", "мутац", "асинхрон"],
-};
-
 const MAX_SECTIONS = 5;
 
 function briefWords(brief: string): Set<string> {
-  return new Set(brief.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean));
+  return new Set(
+    brief
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter(Boolean),
+  );
 }
 
 function matchesKeywords(words: Set<string>, keywords: string[]): boolean {
-  return keywords.some((keyword) => [...words].some((word) =>
-    word === keyword || word === `${keyword}s` || (keyword.length >= 4 && word.startsWith(keyword))));
+  return keywords.some((keyword) =>
+    [...words].some(
+      (word) => word === keyword || word === `${keyword}s` || (keyword.length >= 4 && word.startsWith(keyword)),
+    ),
+  );
 }
 
 /** Select the skill sections whose keywords match the brief, falling back to the core sections. */
-export function selectSections(sections: MarkdownSection[], brief: string, taskKind = classifyTask(brief)): MarkdownSection[] {
+export function selectSections(
+  sections: MarkdownSection[],
+  brief: string,
+  taskKind = classifyTask(brief),
+): MarkdownSection[] {
   const words = briefWords(brief);
   const matched = sections.filter((section) => {
     const keywords = SECTION_KEYWORDS[section.name];
     return keywords !== undefined && matchesKeywords(words, keywords);
   });
-  const defaults = taskKind === "local-change"
-    ? ["Styling"]
-    : taskKind === "direct-change"
-      ? []
-    : taskKind === "new-boundary"
-      ? ["Model first", "Ownership", "DI boundary"]
-      : ["Ownership"];
+  const defaults = defaultSectionNames(taskKind);
   const selected = sections.filter((section) => defaults.includes(section.name));
   return [...selected, ...matched.filter((section) => !defaults.includes(section.name))].slice(0, MAX_SECTIONS);
 }
-
-const RECIPE_KEYWORDS: Record<RecipeName, string[]> = {
-  "http-entity": ["api", "dto", "endpoint", "fetch", "http", "jsonplaceholder", "remote", "repository", "запрос", "репозитор"],
-  "persistence-entity": ["browser", "local", "persist", "persisted", "persistence", "storage", "браузер", "сохран", "хранилищ"],
-  "stateful-feature": ["filter", "queue", "search", "state", "stateful", "workflow", "поиск", "состоян", "фильтр", "очеред"],
-  "route-composition": ["page", "route", "ssr", "маршрут", "страниц"],
-  "optimistic-mutation": ["mutation", "optimistic", "rollback", "мутац", "оптимист", "откат"],
-};
 
 export function selectRecipeNames(brief: string): RecipeName[] {
   const words = briefWords(brief);
@@ -162,4 +163,14 @@ export function parseGeneratorHelp(help: string): { kinds: string[]; options: st
   const options = [...new Set((help.match(FLAG_RE) ?? []).filter((flag) => !EXCLUDED_FLAGS.has(flag)))];
   const kinds = SLICE_KINDS.filter((kind) => new RegExp(`\\b${kind}\\b`, "u").test(help));
   return { kinds: kinds.length > 0 ? kinds : [...SLICE_KINDS], options };
+}
+
+function defaultSectionNames(taskKind: TaskKind): string[] {
+  if (taskKind === "local-change") {
+    return ["Styling"];
+  }
+  if (taskKind === "direct-change") {
+    return [];
+  }
+  return taskKind === "new-boundary" ? ["Model first", "Ownership", "DI boundary"] : ["Ownership"];
 }

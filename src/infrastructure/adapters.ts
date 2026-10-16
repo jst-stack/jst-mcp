@@ -22,8 +22,12 @@ export class SpawnCommandRunner implements CommandRunner {
       let stderr = "";
       let timedOut = false;
 
-      child.stdout?.on("data", (data: Buffer) => { stdout = appendBounded(stdout, data, MAX_CAPTURE_BYTES); });
-      child.stderr?.on("data", (data: Buffer) => { stderr = appendBounded(stderr, data, MAX_CAPTURE_BYTES); });
+      child.stdout?.on("data", (data: Buffer) => {
+        stdout = appendBounded(stdout, data, MAX_CAPTURE_BYTES);
+      });
+      child.stderr?.on("data", (data: Buffer) => {
+        stderr = appendBounded(stderr, data, MAX_CAPTURE_BYTES);
+      });
 
       let killTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -35,9 +39,20 @@ export class SpawnCommandRunner implements CommandRunner {
         }, SIGKILL_GRACE_MS);
       }, timeoutMs);
 
-      const cleanup = () => { clearTimeout(timer); if (killTimer) clearTimeout(killTimer); };
-      child.once("error", (error) => { cleanup(); reject(error); });
-      child.once("close", (code) => { cleanup(); resolvePromise({ exitCode: code, stdout, stderr, timedOut }); });
+      const cleanup = () => {
+        clearTimeout(timer);
+        if (killTimer) {
+          clearTimeout(killTimer);
+        }
+      };
+      child.once("error", (error) => {
+        cleanup();
+        reject(error);
+      });
+      child.once("close", (code) => {
+        cleanup();
+        resolvePromise({ exitCode: code, stdout, stderr, timedOut });
+      });
     });
   }
 }
@@ -51,8 +66,7 @@ export class NodeProjectAccess implements ProjectAccess {
   async isDirectory(path: string): Promise<boolean> {
     try {
       return (await stat(path)).isDirectory();
-    }
-    catch {
+    } catch {
       return false;
     }
   }

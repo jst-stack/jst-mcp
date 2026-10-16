@@ -48,7 +48,15 @@ describe("parseSections", () => {
   it("extracts exact named sections and keeps deeper headings in the body", () => {
     const sections = parseSections(SKILL_MD, 2);
     const names = sections.map((section) => section.name);
-    expect(names).toEqual(["Efficient agent loop", "Model first", "Ownership", "DI boundary", "Styling", "Delivery check", "Recipes"]);
+    expect(names).toEqual([
+      "Efficient agent loop",
+      "Model first",
+      "Ownership",
+      "DI boundary",
+      "Styling",
+      "Delivery check",
+      "Recipes",
+    ]);
     expect(sections[0]!.body).toContain("Run `npm run create:slice -- --help` first.");
   });
 
@@ -139,16 +147,18 @@ Options:
 describe("selectRecipeNames", () => {
   it("selects only recipes implied by the brief", () => {
     expect(selectRecipeNames("SSR page with HTTP data and optimistic local queue rollback")).toEqual([
-      "http-entity", "persistence-entity", "stateful-feature", "route-composition", "optimistic-mutation",
+      "http-entity",
+      "persistence-entity",
+      "stateful-feature",
+      "route-composition",
+      "optimistic-mutation",
     ]);
   });
 
   it("keeps an existing workflow focused on ownership and matched checks", () => {
     const sections = parseSections(SKILL_MD, 2);
     const selected = selectSections(sections, "build a queue with tests");
-    expect(selected.map((section) => section.name)).toEqual([
-      "Ownership", "Delivery check",
-    ]);
+    expect(selected.map((section) => section.name)).toEqual(["Ownership", "Delivery check"]);
   });
 
   it("recognizes remote APIs named by provider", () => {
@@ -156,12 +166,14 @@ describe("selectRecipeNames", () => {
   });
 
   it("recognizes persisted browser state", () => {
-    expect(selectRecipeNames("Queue membership survives reload through persisted browser state"))
-      .toContain("persistence-entity");
+    expect(selectRecipeNames("Queue membership survives reload through persisted browser state")).toContain(
+      "persistence-entity",
+    );
   });
 
   it("recognizes Russian workflow terms", () => {
-    expect(selectRecipeNames("Сохраняй очередь в браузерном хранилище"))
-      .toEqual(expect.arrayContaining(["persistence-entity", "stateful-feature"]));
+    expect(selectRecipeNames("Сохраняй очередь в браузерном хранилище")).toEqual(
+      expect.arrayContaining(["persistence-entity", "stateful-feature"]),
+    );
   });
 });
