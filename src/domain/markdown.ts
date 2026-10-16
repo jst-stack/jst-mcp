@@ -77,11 +77,22 @@ function matchHeading(line: string, level: number): string | null {
   if (!line.startsWith(prefix)) {
     return null;
   }
-  return line
-    .slice(prefix.length)
-    .trim()
-    .replace(/\s+#+$/u, "")
-    .trimEnd();
+  return stripClosingHashes(line.slice(prefix.length));
+}
+
+function stripClosingHashes(text: string): string {
+  const trimmed = text.trim();
+  let hashStart = trimmed.length;
+  while (hashStart > 0 && trimmed[hashStart - 1] === "#") {
+    hashStart -= 1;
+  }
+  if (hashStart === trimmed.length || hashStart === 0) {
+    return trimmed;
+  }
+  const previous = trimmed[hashStart - 1];
+  return previous !== undefined && previous.trim() === ""
+    ? trimmed.slice(0, hashStart).trimEnd()
+    : trimmed;
 }
 
 function isHeadingAtMost(line: string, level: number): boolean {
