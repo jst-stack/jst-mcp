@@ -14,8 +14,8 @@ const LOCAL_CHANGE =
   /\b(?:align|animation|button|card|colour|color|copy|css|element|font|gap|height|hover|layout|margin|padding|px|scss|size|spacing|style|text|transition|ui|width)\w*/iu;
 const LOCAL_CHANGE_RU = /(?:анимац|высот|карточ|кнопк|отступ|размер|стил|текст|цвет|ширин|элемент)\p{L}*/iu;
 const NEW_BOUNDARY =
-  /\b(?:add|build|create|generate|implement|new|scaffold)\w*\b[\s\S]{0,50}\b(?:entity|feature|module|widget)\w*/iu;
-const NEW_BOUNDARY_RU = /(?:добав|нов|реализ|созда)\p{L}*[\s\S]{0,50}(?:сущност|фич|модул|виджет)\p{L}*/iu;
+  /\b(?:add|build|create|generate|implement|new|scaffold)\w*\b[\s\S]{0,80}\b(?:app|application|domain|entity|feature|forum|module|widget|workflow)\w*/iu;
+const NEW_BOUNDARY_RU = /(?:добав|нов|реализ|созда)\p{L}*[\s\S]{0,80}(?:домен|приложен|сущност|фич|форум|модул|виджет|сценар)\p{L}*/iu;
 const WORKFLOW_CHANGE =
   /\b(?:api|async|error|fetch|loading|mutation|optimistic|persist|repository|retry|rollback|state|storage)\w*/iu;
 const WORKFLOW_CHANGE_RU = /(?:асинхрон|загрузк|запрос|мутац|ошибк|повтор|репозитор|состоян|сохран|хранилищ)\p{L}*/iu;

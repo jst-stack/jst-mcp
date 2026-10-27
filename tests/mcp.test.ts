@@ -26,6 +26,10 @@ const FIXTURE_SKILL = `# Frontend architecture
 **Flow:**
 
 - \`npm run create:slice -- entity <name> --repository --tests\`
+
+### mock-http-ssr
+
+**Intent:** SSR-safe runtime mocks through an injected repository adapter.
 `;
 
 interface RpcMessage {

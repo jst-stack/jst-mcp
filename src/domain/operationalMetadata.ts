@@ -102,6 +102,7 @@ export const RECIPE_KEYWORDS: Record<RecipeName, string[]> = {
     "запрос",
     "репозитор",
   ],
+  "mock-http-ssr": ["mock", "mocked", "msw", "мок"],
   "persistence-entity": [
     "browser",
     "local",

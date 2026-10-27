@@ -45,6 +45,7 @@ const AGENT_RULES = [
     "Use jst_check for project gates; do not run its internal lint, typecheck, build, audit, full-unit,",
     "or full-E2E stages separately.",
   ].join(" "),
+  "The task is incomplete until jst_check returns ok: true for the required fast gate.",
 ] as const;
 
 export class JstServices {
@@ -113,6 +114,11 @@ export class JstServices {
       workflow: task.workflow,
       capabilities,
       nextCommands: task.nextCommands,
+      completionRequirement: {
+        tool: "jst_check",
+        gate: "fast",
+        successField: "ok",
+      },
       recipes,
       sections: selected,
     };

@@ -1,6 +1,6 @@
 {
   "name": "@jst-stack/mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server and Pi extension for JST architecture workflows: start tasks, scaffold slices, surface recipes, and run quality gates.",
   "type": "module",
   "license": "MIT",
@@ -36,7 +36,8 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "clean": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "lint": "eslint . --max-warnings 0",
     "test": "npm run build && vitest run",
     "check": "npm run lint && npm test && npm pack --dry-run",
