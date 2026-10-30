@@ -12,6 +12,7 @@ export const SLICE_LAYERS = {
 
 export const RECIPE_NAMES = [
   "http-entity",
+  "mock-http-ssr",
   "persistence-entity",
   "stateful-feature",
   "route-composition",
@@ -92,6 +93,7 @@ export interface StartTaskResult {
   workflow: string[];
   capabilities?: GeneratorCapabilities;
   nextCommands: string[];
+  completionRequirement: { tool: "jst_check"; gate: "fast"; successField: "ok" };
   recipes: RecipeResult[];
   sections: SelectedSection[];
 }
@@ -124,4 +126,5 @@ export interface CheckResult {
   summary: string;
   truncated: boolean;
   nextAction: string;
+  completionReceipt?: { gate: GateName; ok: true };
 }

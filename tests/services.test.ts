@@ -85,6 +85,10 @@ Test risky transitions; run check once.
 
 **Intent:** Compose slices into a thin route.
 
+### mock-http-ssr
+
+**Intent:** Bind an in-memory repository through the existing SSR composition root.
+
 ### optimistic-mutation
 
 **Intent:** Optimistic update with rollback.
@@ -194,6 +198,11 @@ describe("jst_start_task", () => {
     ]);
     expect(result.capabilities?.options).toContain("--stateful");
     expect(result.nextCommands).toEqual(["jst_scaffold_slice", "jst_check"]);
+    expect(result.completionRequirement).toEqual({
+      tool: "jst_check",
+      gate: "fast",
+      successField: "ok",
+    });
     expect(result.recipes.map((recipe) => recipe.recipe)).toContain(
       "optimistic-mutation",
     );
@@ -235,6 +244,19 @@ describe("jst_start_task", () => {
     expect(result.taskKind).toBe("existing-workflow");
     expect(result.sections.map((section) => section.name)).toContain(
       "Ownership",
+    );
+  });
+
+  it("classifies a new product workflow and selects SSR mock guidance", async () => {
+    const runner = new RecordingRunner();
+    runner.respond({ exitCode: 0, stdout: HELP, stderr: "", timedOut: false });
+    const result = await make(runner).startTask({
+      projectRoot: ".",
+      brief: "build a forum with an SSR mock API",
+    });
+    expect(result.taskKind).toBe("new-boundary");
+    expect(result.recipes.map((recipe) => recipe.recipe)).toContain(
+      "mock-http-ssr",
     );
   });
 

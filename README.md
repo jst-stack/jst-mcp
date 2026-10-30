@@ -13,7 +13,7 @@ MCP server and Pi extension for [JST](https://github.com/jst-stack) architecture
 | --- | --- |
 | `jst_start_task` | Classify the brief as a direct file/docs change, local UI edit, existing-workflow change, or new boundary; return only its workflow and relevant architecture sections. Generator discovery runs only for a new boundary. |
 | `jst_scaffold_slice` | Validate kind/name/options and invoke the project-local `create:slice` generator; return created relative paths and the single next action. |
-| `jst_get_recipe` | Return the matching project-local recipe section (`http-entity`, `persistence-entity`, `stateful-feature`, `route-composition`, or `optimistic-mutation`) from `skills/frontend-architecture/SKILL.md`. |
+| `jst_get_recipe` | Return a project-local implementation recipe, including SSR-safe runtime mocking through an injected repository adapter. |
 | `jst_check` | Run an existing npm script (`fix`, `fast`, `architecture`, `release`) and return the exit status, a bounded diagnostic summary, and the prescribed next action. |
 
 Every response is concise JSON. Raw diagnostic output is truncated; no source files are dumped.
@@ -56,6 +56,8 @@ Without a global install, configure the executable and arguments separately:
 3. Implement against the returned project-local contract; request a named recipe only when the start response did not include it.
 4. Run focused tests while implementing.
 5. Call `jst_check` with `fast` after ordinary work. Use `fix` for mechanical repairs and `release` once at delivery; do not repeat a passing gate or run its internal scripts separately.
+
+The start response includes a machine-readable `completionRequirement`. A task is complete only after the required gate returns `ok: true` and a `completionReceipt`.
 
 ## Install: Pi
 

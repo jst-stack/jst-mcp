@@ -98,7 +98,7 @@ function registerGetRecipe(server: McpServer, services: JstServices): void {
       title: "Get a JST recipe",
       description: [
         "Return the matching project-local recipe section from skills/frontend-architecture/SKILL.md",
-        "(http-entity, persistence-entity, stateful-feature, route-composition, optimistic-mutation).",
+        "including the SSR-safe mock HTTP recipe.",
       ].join(" "),
       inputSchema: {
         projectRoot: projectRootSchema.describe("Path to the JST project root."),

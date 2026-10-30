@@ -53,5 +53,6 @@ export async function checkProject(
       onPass: definition.onPass,
       onFail: definition.onFail,
     }),
+    completionReceipt: ok ? { gate, ok: true } : undefined,
   };
 }
