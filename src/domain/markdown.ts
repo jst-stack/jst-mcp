@@ -48,9 +48,17 @@ export function findSection(markdown: string, name: string, level = 2): Markdown
 export function parseNumberedList(body: string): string[] {
   const items: string[] = [];
   for (const line of body.split(/\r?\n/u)) {
-    const match = /^\s*\d+\.\s+(.+?)\s*$/u.exec(line);
-    if (match) {
-      items.push(match[1]!);
+    const trimmed = line.trim();
+    let markerEnd = 0;
+    while (markerEnd < trimmed.length && trimmed[markerEnd]! >= "0" && trimmed[markerEnd]! <= "9") {
+      markerEnd += 1;
+    }
+    const separator = trimmed[markerEnd + 1];
+    if (markerEnd > 0 && trimmed[markerEnd] === "." && separator?.trim() === "") {
+      const item = trimmed.slice(markerEnd + 2).trim();
+      if (item !== "") {
+        items.push(item);
+      }
     }
   }
   return items.length > 0
