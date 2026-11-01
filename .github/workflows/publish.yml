@@ -2,7 +2,15 @@ name: Publish
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths:
+      - package.json
+      - package-lock.json
+  workflow_dispatch:
+
+concurrency:
+  group: publish-${{ github.repository }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -26,28 +34,34 @@ jobs:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
-      - run: npm ci
-      - run: npm run check
-      - name: Verify tag matches package version
-        run: >-
-          node --input-type=module --eval
-          "import manifest from './package.json' with { type: 'json' };
-          if (process.env.GITHUB_REF_NAME !== 'v' + manifest.version) process.exit(1)"
-      - name: Check whether the version is already published
-        id: registry
+      - name: Resolve package release
+        id: package
         run: |
           package_name=$(node -p "require('./package.json').name")
           package_version=$(node -p "require('./package.json').version")
-          npm view "$package_name@$package_version" version && echo "published=true" >> "$GITHUB_OUTPUT" || true
+          echo "name=$package_name" >> "$GITHUB_OUTPUT"
+          echo "version=$package_version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$package_version" >> "$GITHUB_OUTPUT"
+      - name: Check whether the version is already published
+        id: registry
+        run: |
+          npm view "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }}" version \
+            && echo "published=true" >> "$GITHUB_OUTPUT" || true
+      - if: ${{ steps.registry.outputs.published != 'true' }}
+        run: npm ci
       - if: ${{ steps.registry.outputs.published != 'true' }}
         run: npm publish --access public
       - name: Verify the published package
         run: |
-          package="$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")"
+          package="${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }}"
           for attempt in {1..12}; do
             npm view "$package" version dist.integrity dist.attestations && exit 0
             [ "$attempt" -eq 12 ] && exit 1
             sleep 15
           done
       - name: Create GitHub release
-        run: gh release view "$GITHUB_REF_NAME" || gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        env:
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+        run: >-
+          gh release view "$RELEASE_TAG" ||
+          gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --generate-notes
