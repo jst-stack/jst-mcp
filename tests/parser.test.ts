@@ -79,6 +79,10 @@ describe("parseNumberedList", () => {
     expect(items).toEqual(["first", "second"]);
   });
 
+  it("handles long whitespace without regex backtracking", () => {
+    expect(parseNumberedList(`9. ${" ".repeat(100_000)}item`)).toEqual(["item"]);
+  });
+
   it("falls back to non-empty lines when no list exists", () => {
     expect(parseNumberedList("a\n\nb")).toEqual(["a", "b"]);
   });
