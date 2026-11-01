@@ -44,6 +44,30 @@ export function defaultNextAction(layer: string, name: string): string {
   return `Compose @/${layer}/${name}/${name}.public from an owning page or higher layer.`;
 }
 
+export function installCommands(
+  packageManager: "npm" | "pnpm",
+  dependencies: string[],
+  devDependencies: string[],
+): string[] {
+  const commands: string[] = [];
+  if (dependencies.length > 0) {
+    const action = packageManager === "pnpm" ? "add" : "install";
+    commands.push(`${packageManager} ${action} ${dependencies.join(" ")}`);
+  }
+  if (devDependencies.length > 0) {
+    const action = packageManager === "pnpm" ? "add --save-dev" : "install --save-dev";
+    commands.push(`${packageManager} ${action} ${devDependencies.join(" ")}`);
+  }
+  return commands;
+}
+
+export function noInstallNextAction(commands: string[], nextAction: string): string {
+  if (commands.length === 0) {
+    return nextAction;
+  }
+  return `Install generated dependencies first: ${commands.join(" && ")}. Then ${nextAction}`;
+}
+
 function appendFlag(args: string[], enabled: boolean | undefined, flag: string): void {
   if (enabled) {
     args.push(flag);

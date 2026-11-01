@@ -100,7 +100,7 @@ export const GATE_DEFINITIONS: Record<GateName, GateDefinition> = {
     onFail: "Repair the reported diagnostics; re-run only this gate until it passes.",
   },
   architecture: {
-    script: "lint:architecture",
+    script: "lint",
     description: "Layer-direction, effect-boundary, naming, and architecture-kernel checks.",
     onPass: "Proceed; a green check is necessary but not proof of correct ownership.",
     onFail: "Move the responsibility to the reported boundary; do not add inline disables.",

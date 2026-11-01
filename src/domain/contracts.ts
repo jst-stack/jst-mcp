@@ -107,6 +107,7 @@ export interface ScaffoldSliceResult {
   createdPaths: string[];
   dependencies: string[];
   devDependencies: string[];
+  installCommands: string[];
   nextAction: string;
 }
 

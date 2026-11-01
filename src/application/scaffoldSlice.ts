@@ -13,6 +13,8 @@ import {
   buildScaffoldArgs,
   defaultNextAction,
   extractNextAction,
+  installCommands,
+  noInstallNextAction,
   parseDryRunPlan,
 } from "./scaffold.js";
 
@@ -42,6 +44,9 @@ export async function scaffoldSlice(
     );
   }
   const plan = parseDryRunPlan(dryRun.stdout, layer, name);
+  const requiredInstallCommands = opts.noInstall
+    ? installCommands(project.packageManager, plan.dependencies, plan.devDependencies)
+    : [];
 
   const run = await runner.run(npmCommand(), [...baseArgs, "--yes"], {
     cwd: project.root,
@@ -53,15 +58,19 @@ export async function scaffoldSlice(
     );
   }
 
+  const nextAction = extractNextAction(run.stdout) ?? defaultNextAction(layer, name);
   return {
     target: `src/${layer}/${name}`,
     layer,
     kind,
     name,
-    command: `npm run create:slice -- ${kind} ${name}`,
+    command: `npm ${baseArgs.join(" ")}`,
     createdPaths: plan.createdPaths,
     dependencies: plan.dependencies,
     devDependencies: plan.devDependencies,
-    nextAction: extractNextAction(run.stdout) ?? defaultNextAction(layer, name),
+    installCommands: requiredInstallCommands,
+    nextAction: opts.noInstall
+      ? noInstallNextAction(requiredInstallCommands, nextAction)
+      : nextAction,
   };
 }

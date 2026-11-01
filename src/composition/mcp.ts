@@ -77,7 +77,10 @@ function registerScaffoldSlice(server: McpServer, services: JstServices): void {
         options: sliceOptionsSchema
           .optional()
           .describe(
-            "Generator flags: stateful, repository, service, persistence, ui, tests, msw, public, noInstall, style.",
+            [
+              "Generator flags. repository, service, persistence, and msw are entity-only;",
+              "msw requires repository; stateful is unavailable for widgets.",
+            ].join(" "),
           ),
       },
     },

@@ -116,6 +116,9 @@ class FakeProject implements ProjectAccess {
   async isDirectory(): Promise<boolean> {
     return this.isDir;
   }
+  async realPath(path: string): Promise<string> {
+    return path;
+  }
   async readTextFile(): Promise<string> {
     return this.skillMarkdown;
   }
@@ -153,6 +156,7 @@ const JST_SCRIPTS: Record<string, string> = {
   "lint:fix": "eslint --fix",
   validate: "tsc",
   "lint:architecture": "jst-lint architecture",
+  lint: "eslint . && npm run lint:architecture",
   "check:release": "npm run check && npm run test:e2e",
 };
 
@@ -319,6 +323,7 @@ describe("jst_start_task", () => {
       notDir.startTask({ projectRoot: "missing", brief: "x" }),
     ).rejects.toThrow(ProjectError);
   });
+
 });
 
 describe("jst_get_recipe", () => {
@@ -391,6 +396,7 @@ ${JSON.stringify({
       "src/entities/account/account.public.ts",
     ]);
     expect(result.dependencies).toEqual(["zod"]);
+    expect(result.installCommands).toEqual([]);
     expect(result.nextAction).toBe(
       "compose @/entities/account/account.public from an owning page.",
     );
@@ -422,6 +428,7 @@ ${JSON.stringify({
       expect(call.options.cwd).toBe(WORK_ROOT);
     }
   });
+
 
   it("fails fast on invalid names before running anything", async () => {
     const runner = new RecordingRunner();
@@ -469,6 +476,7 @@ describe("jst_check", () => {
     expect(result.summary).toContain("all good");
     expect(runner.calls[0]!.args).toEqual(["run", "lint:fix"]);
   });
+
 
   it("reports failure and the prescribed next action", async () => {
     const runner = new RecordingRunner();

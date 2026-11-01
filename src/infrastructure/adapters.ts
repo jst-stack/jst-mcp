@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, realpath, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { CommandResult, CommandRunner, ProjectAccess } from "../application/ports.js";
 
@@ -69,6 +69,10 @@ export class NodeProjectAccess implements ProjectAccess {
     } catch {
       return false;
     }
+  }
+
+  async realPath(path: string): Promise<string> {
+    return realpath(path);
   }
 
   async readTextFile(path: string): Promise<string> {

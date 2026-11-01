@@ -14,5 +14,6 @@ export interface CommandRunner {
 export interface ProjectAccess {
   readPackageJson(root: string): Promise<unknown>;
   isDirectory(path: string): Promise<boolean>;
+  realPath(path: string): Promise<string>;
   readTextFile(path: string): Promise<string>;
 }
