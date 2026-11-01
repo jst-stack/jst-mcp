@@ -12,7 +12,7 @@ MCP server and Pi extension for [JST](https://github.com/jst-stack) architecture
 | Tool | Purpose |
 | --- | --- |
 | `jst_start_task` | Classify the brief as a direct file/docs change, local UI edit, existing-workflow change, or new boundary; return only its workflow and relevant architecture sections. Generator discovery runs only for a new boundary. |
-| `jst_scaffold_slice` | Validate kind/name/options and invoke the project-local `create:slice` generator; return created relative paths and the single next action. |
+| `jst_scaffold_slice` | Validate kind/name/options and invoke the project-local `create:slice` generator; return created paths, exact deferred-install commands, and the next action. |
 | `jst_get_recipe` | Return a project-local implementation recipe, including SSR-safe runtime mocking through an injected repository adapter. |
 | `jst_check` | Run an existing npm script (`fix`, `fast`, `architecture`, `release`) and return the exit status, a bounded diagnostic summary, and the prescribed next action. |
 
@@ -55,7 +55,7 @@ Without a global install, configure the executable and arguments separately:
 2. For a local UI/content/style edit, change only its owner and colocated files. Use `jst_scaffold_slice` only for a genuinely new architecture boundary.
 3. Implement against the returned project-local contract; request a named recipe only when the start response did not include it.
 4. Run focused tests while implementing.
-5. Call `jst_check` with `fast` after ordinary work. Use `fix` for mechanical repairs and `release` once at delivery; do not repeat a passing gate or run its internal scripts separately.
+5. Call `jst_check` with `fast` after ordinary work. Use `fix` for mechanical repairs, `architecture` for the complete lint contract, and `release` once at delivery; do not repeat a passing gate or run its internal scripts separately.
 
 The start response includes a machine-readable `completionRequirement`. A task is complete only after the required gate returns `ok: true` and a `completionReceipt`.
 
@@ -80,7 +80,8 @@ Or reference the package subpath `@jst-stack/mcp/pi` from your Pi extensions con
 - External effects (process spawn, filesystem) sit behind narrow ports and are replaceable in tests.
 - Architecture sections and recipes are parsed from the project-local skill by a pure Markdown section parser; no AI summarization and no embedded architecture prose.
 - Commands run via argument arrays; user values are never interpolated into a shell string.
-- All tool inputs and project paths are validated fail-fast.
+- Project roots are resolved canonically and must stay inside the server's startup workspace, including through symlinks.
+- Projects must expose the JST generator, configuration, and architecture skill before any project command can run.
 
 ## Development
 
@@ -91,6 +92,6 @@ npm run check   # lint + build + test + npm pack --dry-run
 
 ## Known limitations
 
-- `jst_scaffold_slice` runs the generator twice: a `--dry-run` to read the exact file plan, then the real run (which installs dependencies unless `--no-install` is passed).
+- `jst_scaffold_slice` runs the generator twice: a `--dry-run` to read the exact file plan, then the real run. With `noInstall`, use the returned exact `installCommands` before running a gate.
 - Diagnostic summaries are bounded to the last 4000 characters; full output is not preserved.
-- `jst_start_task` and `jst_get_recipe` require `skills/frontend-architecture/SKILL.md` in the project root. Each returned section is bounded to 4000 characters and the selected section set to 6500 characters.
+- `jst_start_task` and `jst_get_recipe` require `skills/frontend-architecture/SKILL.md` in the project root. Each returned section is bounded to 1400 characters and the selected section set to 6500 characters.
