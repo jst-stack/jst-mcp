@@ -37,6 +37,33 @@ describe("input validation", () => {
     expect(sliceOptionsSchema.safeParse({ style: "sass" }).success).toBe(false);
   });
 
+  it("rejects options that are invalid for the selected slice kind", () => {
+    expect(
+      scaffoldInputSchema.safeParse({
+        projectRoot: "/p",
+        kind: "feature",
+        name: "checkout",
+        options: { service: true },
+      }).success,
+    ).toBe(false);
+    expect(
+      scaffoldInputSchema.safeParse({
+        projectRoot: "/p",
+        kind: "widget",
+        name: "header",
+        options: { stateful: true },
+      }).success,
+    ).toBe(false);
+    expect(
+      scaffoldInputSchema.safeParse({
+        projectRoot: "/p",
+        kind: "entity",
+        name: "account",
+        options: { msw: true },
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejects dangerous projectRoot values fail-fast", () => {
     expect(projectRootSchema.safeParse("").success).toBe(false);
     expect(projectRootSchema.safeParse("/tmp/proj\0/x").success).toBe(false);

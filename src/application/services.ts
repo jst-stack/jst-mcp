@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 import { ProjectError } from "../domain/contracts.js";
 import type {
   CheckResult,
@@ -60,9 +60,21 @@ export class JstServices {
   }
 
   private async resolveProjectRoot(projectRoot: string): Promise<string> {
-    const root = this.resolveRoot(projectRoot);
-    if (!(await this.project.isDirectory(root))) {
-      throw new ProjectError(`Project root is not a directory: ${root}`);
+    const candidate = this.resolveRoot(projectRoot);
+    if (!(await this.project.isDirectory(candidate))) {
+      throw new ProjectError(`Project root is not a directory: ${candidate}`);
+    }
+    const [workspaceRoot, root] = await Promise.all([
+      this.project.realPath(this.cwd),
+      this.project.realPath(candidate),
+    ]);
+    const workspaceRelativePath = relative(workspaceRoot, root);
+    if (
+      workspaceRelativePath === ".." ||
+      workspaceRelativePath.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) ||
+      isAbsolute(workspaceRelativePath)
+    ) {
+      throw new ProjectError(`Project root must stay inside the MCP workspace: ${workspaceRoot}`);
     }
     return root;
   }
@@ -89,8 +101,19 @@ export class JstServices {
         `Not a JST project (${root}): missing "create:slice" script. Scaffold it with create-jst first.`,
       );
     }
+    for (const marker of ["jst.config.ts", SKILL_RELATIVE_PATH]) {
+      try {
+        await this.project.readTextFile(resolve(root, marker));
+      } catch {
+        throw new ProjectError(`Not a JST project (${root}): missing ${marker}.`);
+      }
+    }
     const name = typeof record.name === "string" ? record.name : "jst-project";
-    return { root, scripts: scriptRecord, name };
+    const packageManager =
+      typeof record.packageManager === "string" && record.packageManager.startsWith("pnpm@")
+        ? "pnpm"
+        : "npm";
+    return { root, scripts: scriptRecord, name, packageManager };
   }
 
   async startTask(input: unknown): Promise<StartTaskResult> {
@@ -132,14 +155,14 @@ export class JstServices {
       projectRoot,
       recipe,
     });
-    const resolved = await this.resolveProjectRoot(root);
-    const sections = await this.readSkillSections(resolved);
+    const project = await this.requireJstProject(root);
+    const sections = await this.readSkillSections(project.root);
     const recipesSection = sections.find(
       (section) => section.name === RECIPES_SECTION,
     );
     if (!recipesSection) {
       throw new ProjectError(
-        `No "${RECIPES_SECTION}" section in ${resolve(resolved, SKILL_RELATIVE_PATH)}.`,
+        `No "${RECIPES_SECTION}" section in ${resolve(project.root, SKILL_RELATIVE_PATH)}.`,
       );
     }
     const recipeSection = parseSections(recipesSection.body, 3).find(

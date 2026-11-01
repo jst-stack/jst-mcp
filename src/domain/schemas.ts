@@ -46,7 +46,38 @@ export const scaffoldInputSchema = z
     name: sliceNameSchema,
     options: sliceOptionsSchema.optional(),
   })
-  .strict();
+  .strict()
+  .superRefine(({ kind, options }, context) => {
+    if (!options) {
+      return;
+    }
+    const entityOnly = ["repository", "service", "persistence", "msw"] as const;
+    if (kind !== "entity") {
+      for (const option of entityOnly) {
+        if (options[option]) {
+          context.addIssue({
+            code: "custom",
+            message: `${option} is available only for entity slices`,
+            path: ["options", option],
+          });
+        }
+      }
+    }
+    if (kind === "widget" && options.stateful) {
+      context.addIssue({
+        code: "custom",
+        message: "stateful is available only for entity, feature, and module slices",
+        path: ["options", "stateful"],
+      });
+    }
+    if (options.msw && !options.repository) {
+      context.addIssue({
+        code: "custom",
+        message: "msw requires repository",
+        path: ["options", "msw"],
+      });
+    }
+  });
 export const recipeInputSchema = z.object({ projectRoot: projectRootSchema, recipe: recipeNameSchema }).strict();
 export const checkInputSchema = z.object({ projectRoot: projectRootSchema, gate: gateNameSchema }).strict();
 

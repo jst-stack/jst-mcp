@@ -12,6 +12,7 @@ export interface JstProject {
   root: string;
   scripts: Record<string, string>;
   name: string;
+  packageManager: "npm" | "pnpm";
 }
 
 export type RequireJstProject = (projectRoot: string) => Promise<JstProject>;
@@ -37,6 +38,7 @@ export async function checkProject(
   });
   const ok = result.exitCode === 0;
   const bounded = boundSummary(result.stdout, result.stderr);
+  const nextAction = dependencyRepairAction(bounded.summary, definition.onFail);
   return {
     gate,
     script: definition.script,
@@ -51,8 +53,18 @@ export async function checkProject(
       ok,
       timeoutMs,
       onPass: definition.onPass,
-      onFail: definition.onFail,
+      onFail: nextAction,
     }),
     completionReceipt: ok ? { gate, ok: true } : undefined,
   };
+}
+
+function dependencyRepairAction(summary: string, fallback: string): string {
+  if (!/could not be resolved|error typed value|cannot find module/iu.test(summary)) {
+    return fallback;
+  }
+  return [
+    "Verify the generated dependencies are installed with the exact versions returned by jst_scaffold_slice.",
+    "If typecheck passes but these diagnostics persist, remove the disposable .eslintcache and re-run only this gate.",
+  ].join(" ");
 }

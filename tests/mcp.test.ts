@@ -1,7 +1,6 @@
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -74,10 +73,11 @@ describe.skipIf(skip)("jst-mcp stdio black-box", () => {
   let fixtureRoot = "";
 
   beforeAll(async () => {
-    fixtureRoot = await mkdtemp(resolve(tmpdir(), "jst-mcp-"));
+    fixtureRoot = await mkdtemp(resolve(process.cwd(), ".tmp-jst-mcp-"));
     const skillDir = resolve(fixtureRoot, "skills", "frontend-architecture");
     await mkdir(skillDir, { recursive: true });
     await writeFile(resolve(skillDir, "SKILL.md"), FIXTURE_SKILL);
+    await writeFile(resolve(fixtureRoot, "jst.config.ts"), "export default {}\n");
     await writeFile(
       resolve(fixtureRoot, "package.json"),
       JSON.stringify({
