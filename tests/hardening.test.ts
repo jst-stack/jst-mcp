@@ -1,6 +1,9 @@
+import { mkdtemp, rm, symlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { JstServices } from "../src/application/services.js";
+import { NodeProjectAccess } from "../src/infrastructure/adapters.js";
 import type {
   CommandResult,
   CommandRunner,
@@ -66,6 +69,26 @@ describe("agent workflow hardening", () => {
     await expect(
       services().startTask({ projectRoot: "../other", brief: "x" }),
     ).rejects.toThrow(/inside the MCP workspace/u);
+  });
+
+  it("rejects a workspace symlink that resolves outside the workspace", async () => {
+    const workspace = await mkdtemp(resolve(process.cwd(), ".tmp-workspace-"));
+    const outside = await mkdtemp(resolve(tmpdir(), "jst-mcp-outside-"));
+    try {
+      const link = resolve(workspace, "escaped");
+      await symlink(outside, link, process.platform === "win32" ? "junction" : "dir");
+      const service = new JstServices(
+        new RecordingRunner(),
+        new NodeProjectAccess(),
+        workspace,
+      );
+      await expect(
+        service.startTask({ projectRoot: link, brief: "x" }),
+      ).rejects.toThrow(/inside the MCP workspace/u);
+    } finally {
+      await rm(workspace, { recursive: true, force: true });
+      await rm(outside, { recursive: true, force: true });
+    }
   });
 
   it("returns exact install commands when installation is deferred", async () => {
