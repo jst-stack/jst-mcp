@@ -40,7 +40,7 @@ jobs:
           package_version=$(node -p "require('./package.json').version")
           npm view "$package_name@$package_version" version && echo "published=true" >> "$GITHUB_OUTPUT" || true
       - if: ${{ steps.registry.outputs.published != 'true' }}
-        run: npm publish --provenance --access public
+        run: npm publish --access public
       - name: Verify the published package
         run: |
           package="$(node -p "require('./package.json').name")@$(node -p "require('./package.json').version")"
