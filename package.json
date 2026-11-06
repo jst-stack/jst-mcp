@@ -39,6 +39,8 @@
     "build": "npm run clean && tsc -p tsconfig.json && node --eval \"require('node:fs').chmodSync('dist/bin/jst-mcp.js', 0o755)\"",
     "clean": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "lint": "eslint . --max-warnings 0",
+    "audit:development": "node scripts/audit-development.mjs",
+    "audit:development:sync": "node scripts/sync-development-advisories.mjs --write",
     "test": "npm run build && vitest run",
     "check": "npm run lint && npm test && npm pack --dry-run",
     "prepublishOnly": "npm run check"
