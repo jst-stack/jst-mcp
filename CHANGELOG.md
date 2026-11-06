@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.5
 
 - Add `jst_get_section` and stop truncating `jst_get_recipe` so full architecture text is always reachable.
 - Add `dryRun` to `jst_scaffold_slice`; on install failure, retry with `--no-install`, still create the slice, and report `installFailed` with recovery commands.
