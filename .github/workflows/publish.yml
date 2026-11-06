@@ -1,67 +1,17 @@
-name: Publish
+name: Release
 
 on:
   push:
     branches: [main]
-    paths:
-      - package.json
-      - package-lock.json
   workflow_dispatch:
 
 concurrency:
-  group: publish-${{ github.repository }}
+  group: release
   cancel-in-progress: false
 
-permissions:
-  contents: read
-
 jobs:
-  npm:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment: npm
+  release:
     permissions:
       contents: write
       id-token: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with:
-          node-version-file: .nvmrc
-          registry-url: https://registry.npmjs.org
-          package-manager-cache: false
-      - name: Resolve package release
-        id: package
-        run: |
-          package_name=$(node -p "require('./package.json').name")
-          package_version=$(node -p "require('./package.json').version")
-          echo "name=$package_name" >> "$GITHUB_OUTPUT"
-          echo "version=$package_version" >> "$GITHUB_OUTPUT"
-          echo "tag=v$package_version" >> "$GITHUB_OUTPUT"
-      - name: Check whether the version is already published
-        id: registry
-        run: |
-          npm view "${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }}" version \
-            && echo "published=true" >> "$GITHUB_OUTPUT" || true
-      - if: ${{ steps.registry.outputs.published != 'true' }}
-        run: npm ci
-      - if: ${{ steps.registry.outputs.published != 'true' }}
-        run: npm publish --access public
-      - name: Verify the published package
-        run: |
-          package="${{ steps.package.outputs.name }}@${{ steps.package.outputs.version }}"
-          for attempt in {1..12}; do
-            npm view "$package" version dist.integrity dist.attestations && exit 0
-            [ "$attempt" -eq 12 ] && exit 1
-            sleep 15
-          done
-      - name: Create GitHub release
-        env:
-          RELEASE_TAG: ${{ steps.package.outputs.tag }}
-        run: >-
-          gh release view "$RELEASE_TAG" ||
-          gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --generate-notes
+    uses: jst-stack/.github/.github/workflows/npm-release.yml@main
