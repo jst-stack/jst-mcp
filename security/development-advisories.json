@@ -1,0 +1,10 @@
+{
+	"waivers": [
+		{
+			"package": "minimatch",
+			"owner": "@jst-stack/maintainers",
+			"reason": "Reached only through the lint toolchain, never from the published bundle. It cannot move to the patched major until eslint and typescript-eslint accept minimatch 11, which drops the makeRe export that eslint-plugin-import-x still imports.",
+			"expires": "2027-02-04"
+		}
+	]
+}
