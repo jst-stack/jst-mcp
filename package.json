@@ -1,6 +1,6 @@
 {
   "name": "@jst-stack/mcp",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "MCP server and Pi extension for JST architecture workflows: start tasks, scaffold slices, surface recipes, and run quality gates.",
   "type": "module",
   "license": "MIT",

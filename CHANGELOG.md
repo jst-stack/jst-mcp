@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5
+
+- Add `jst_get_section` and stop truncating `jst_get_recipe` so full architecture text is always reachable.
+- Add `dryRun` to `jst_scaffold_slice`; on install failure, retry with `--no-install`, still create the slice, and report `installFailed` with recovery commands.
+- Expose `structuredContent` on tool results to remove double JSON parsing.
+- Register `jst_get_section` in the Pi extension.
+- Add `jst-mcp init` to register the `jst` MCP server in `mcp.json` and the Pi extension in `settings.json` (idempotent, `--dry-run`, preserves other entries).
+
 ## 0.1.4
 
 - Confine project commands to canonical JST workspace roots, including symlink resolution.
