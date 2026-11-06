@@ -59,7 +59,7 @@ jst-mcp init           # write the config
 jst-mcp init --dry-run # preview the change without writing
 ```
 
-It prints the resolved Pi extension path; add it to the `extensions` list in `settings.json` or load it with `pi -e <path>`. Set `JST_MCP_PI_DIR` to target a different Pi config directory.
+It also appends the resolved Pi extension path to the `extensions` array in `~/.pi/agent/settings.json` when absent, preserving existing entries and other keys; a non-array `extensions` value is left untouched. Set `JST_MCP_PI_DIR` to target a different Pi config directory. As a fallback, load the extension with `pi -e <path>`.
 
 ## Agent workflow
 

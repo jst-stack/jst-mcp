@@ -14,7 +14,9 @@ export interface InitResult {
   configPath: string;
   binPath: string;
   extensionPath: string;
+  settingsPath: string;
   changed: boolean;
+  settingsChanged: boolean;
   dryRun: boolean;
   steps: string[];
 }
@@ -29,6 +31,32 @@ export function mergeMcpConfig(
 ): Record<string, unknown> {
   const servers = (existing.mcpServers as Record<string, unknown> | undefined) ?? {};
   return { ...existing, mcpServers: { ...servers, jst: serverEntry(binPath) } };
+}
+
+export function mergeSettings(
+  existing: Record<string, unknown>,
+  extensionPath: string,
+): Record<string, unknown> {
+  const current = existing.extensions;
+  if (current !== undefined && !Array.isArray(current)) {
+    return existing;
+  }
+  const list = Array.isArray(current) ? (current as unknown[]) : [];
+  if (list.includes(extensionPath)) {
+    return existing;
+  }
+  return { ...existing, extensions: [...list, extensionPath] };
+}
+
+async function readJson(path: string): Promise<Record<string, unknown>> {
+  return existsSync(path)
+    ? (JSON.parse(await readFile(path, "utf8")) as Record<string, unknown>)
+    : {};
+}
+
+async function writeJson(path: string, value: unknown): Promise<void> {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 function distPath(relative: string): string {
@@ -48,29 +76,38 @@ function describe(changed: boolean, dryRun: boolean): string {
 
 export async function runInit(options: InitOptions = {}): Promise<InitResult> {
   const dryRun = options.dryRun ?? false;
-  const configPath = join(piDirectory(options), "mcp.json");
+  const directory = piDirectory(options);
+  const configPath = join(directory, "mcp.json");
+  const settingsPath = join(directory, "settings.json");
   const binPath = distPath("../bin/jst-mcp.js");
   const extensionPath = distPath("../pi/extension.js");
-  const existing = existsSync(configPath)
-    ? (JSON.parse(await readFile(configPath, "utf8")) as Record<string, unknown>)
-    : {};
-  const merged = mergeMcpConfig(existing, binPath);
-  const changed = JSON.stringify(existing) !== JSON.stringify(merged);
-  if (changed && !dryRun) {
-    await mkdir(dirname(configPath), { recursive: true });
-    await writeFile(configPath, `${JSON.stringify(merged, null, 2)}\n`);
+  const config = await readJson(configPath);
+  const settings = await readJson(settingsPath);
+  const mergedConfig = mergeMcpConfig(config, binPath);
+  const mergedSettings = mergeSettings(settings, extensionPath);
+  const configChanged = JSON.stringify(config) !== JSON.stringify(mergedConfig);
+  const settingsChanged = JSON.stringify(settings) !== JSON.stringify(mergedSettings);
+  if (!dryRun) {
+    if (configChanged) {
+      await writeJson(configPath, mergedConfig);
+    }
+    if (settingsChanged) {
+      await writeJson(settingsPath, mergedSettings);
+    }
   }
   return {
     ok: true,
     configPath,
+    settingsPath,
     binPath,
     extensionPath,
-    changed,
+    changed: configChanged,
+    settingsChanged,
     dryRun,
     steps: [
-      `MCP server "jst" ${describe(changed, dryRun)} in ${configPath}.`,
-      `Pi extension file: ${extensionPath}`,
-      `Add that extension to settings.json or run: pi -e ${extensionPath}`,
+      `MCP server "jst" ${describe(configChanged, dryRun)} in ${configPath}.`,
+      `Pi extension ${describe(settingsChanged, dryRun)} in ${settingsPath}.`,
+      `Fallback: run pi -e ${extensionPath}`,
     ],
   };
 }

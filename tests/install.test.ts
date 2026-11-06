@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { mergeMcpConfig, runInit } from "../src/composition/install.js";
+import { mergeMcpConfig, mergeSettings, runInit } from "../src/composition/install.js";
 
 const dirs: string[] = [];
 
@@ -25,6 +25,15 @@ describe("mergeMcpConfig", () => {
   });
 });
 
+describe("mergeSettings", () => {
+  it("appends the extension once and preserves other keys", () => {
+    const merged = mergeSettings({ theme: "dark", extensions: ["other"] }, "/abs/ext.js");
+    expect(merged.theme).toBe("dark");
+    expect(merged.extensions).toEqual(["other", "/abs/ext.js"]);
+    expect(mergeSettings(merged, "/abs/ext.js")).toBe(merged);
+  });
+});
+
 describe("runInit", () => {
   it("writes mcp.json then is idempotent", async () => {
     const piDir = await tempDir();
@@ -32,14 +41,19 @@ describe("runInit", () => {
     expect(first.changed).toBe(true);
     const raw = JSON.parse(await readFile(join(piDir, "mcp.json"), "utf8")) as Record<string, unknown>;
     expect((raw.mcpServers as Record<string, unknown>).jst).toBeTruthy();
+    const settings = JSON.parse(await readFile(join(piDir, "settings.json"), "utf8")) as Record<string, unknown>;
+    expect(settings.extensions).toEqual([first.extensionPath]);
     const second = await runInit({ piDir });
     expect(second.changed).toBe(false);
+    expect(second.settingsChanged).toBe(false);
   });
 
   it("does not write in dry-run mode", async () => {
     const piDir = await tempDir();
     const result = await runInit({ piDir, dryRun: true });
     expect(result.changed).toBe(true);
+    expect(result.settingsChanged).toBe(true);
     await expect(readFile(join(piDir, "mcp.json"), "utf8")).rejects.toThrow();
+    await expect(readFile(join(piDir, "settings.json"), "utf8")).rejects.toThrow();
   });
 });
