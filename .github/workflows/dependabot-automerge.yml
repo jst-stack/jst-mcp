@@ -2,7 +2,7 @@ name: Dependabot auto-merge
 
 on:
   pull_request_target:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review, synchronize]
 
 permissions:
   contents: read
@@ -13,15 +13,22 @@ concurrency:
 
 jobs:
   enable:
-    if: github.actor == 'dependabot[bot]' && !github.event.pull_request.draft
+    # The pull request author is the trust boundary: Dependabot PRs are ours, and the job never
+    # checks out or executes pull request code. `github.actor` is the wrong selector here because
+    # it is the maintainer, not the bot, when a "Update branch" push re-triggers this workflow.
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
       pull-requests: write
     steps:
       - id: metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-      - name: Enable auto-merge for non-major updates
+      # Runs again on every synchronize: a Dependabot rebase or a manual "Update branch" push drops
+      # the auto-merge request, which used to park the pull request until someone squashed it by hand.
+      # Re-arming is idempotent, so repeated runs on the same pull request are harmless.
+      - name: Request auto-merge for non-major updates
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         env:
           GH_TOKEN: ${{ github.token }}
