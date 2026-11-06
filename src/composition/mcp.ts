@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { readFileSync } from "node:fs";
 import { JstServices } from "../application/services.js";
@@ -8,6 +9,7 @@ import {
   gateNameSchema,
   projectRootSchema,
   recipeNameSchema,
+  sectionNameSchema,
   sliceKindSchema,
   sliceNameSchema,
   sliceOptionsSchema,
@@ -18,14 +20,35 @@ const VERSION = (
   JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as { version: string }
 ).version;
 
-function textResult(data: unknown): { content: { type: "text"; text: string }[] } {
-  return { content: [{ type: "text", text: JSON.stringify(data) }] };
+function textResult(data: unknown): {
+  content: { type: "text"; text: string }[];
+  structuredContent?: Record<string, unknown>;
+} {
+  const result: {
+    content: { type: "text"; text: string }[];
+    structuredContent?: Record<string, unknown>;
+  } = {
+    content: [{ type: "text", text: JSON.stringify(data) }],
+  };
+  if (data !== null && typeof data === "object" && !Array.isArray(data)) {
+    result.structuredContent = data as Record<string, unknown>;
+  }
+  return result;
 }
 
-function errorResult(error: unknown): { content: { type: "text"; text: string }[]; isError: true } {
+function errorResult(error: unknown): {
+  content: { type: "text"; text: string }[];
+  structuredContent?: Record<string, unknown>;
+  isError: true;
+} {
   const message = error instanceof Error ? error.message : String(error);
   const code = error instanceof JstError ? error.code : "INTERNAL";
-  return { isError: true, content: [{ type: "text", text: JSON.stringify({ ok: false, error: { code, message } }) }] };
+  const payload = { ok: false, error: { code, message } };
+  return {
+    content: [{ type: "text", text: JSON.stringify(payload) }],
+    isError: true,
+    structuredContent: payload,
+  };
 }
 
 export function createMcpServer(services: JstServices): McpServer {
@@ -33,6 +56,7 @@ export function createMcpServer(services: JstServices): McpServer {
   registerStartTask(server, services);
   registerScaffoldSlice(server, services);
   registerGetRecipe(server, services);
+  registerGetSection(server, services);
   registerCheck(server, services);
   return server;
 }
@@ -45,6 +69,7 @@ function registerStartTask(server: McpServer, services: JstServices): void {
       description: [
         "Start every JST implementation here. Returns the project-local contract, relevant architecture sections,",
         "and agentRules that replace broad documentation, generator, linter, framework, and dependency discovery.",
+        "If a returned section is truncated, call jst_get_section for its full text.",
       ].join(" "),
       inputSchema: {
         projectRoot: projectRootSchema.describe("Path to the JST project root."),
@@ -68,7 +93,7 @@ function registerScaffoldSlice(server: McpServer, services: JstServices): void {
       title: "Scaffold a JST slice",
       description: [
         "Validate kind/name/options and invoke the project-local create:slice generator,",
-        "returning created relative paths and the single next action.",
+        "returning created relative paths and the single next action. Set dryRun to preview without writing files.",
       ].join(" "),
       inputSchema: {
         projectRoot: projectRootSchema.describe("Path to the JST project root."),
@@ -82,6 +107,10 @@ function registerScaffoldSlice(server: McpServer, services: JstServices): void {
               "msw requires repository; stateful is unavailable for widgets.",
             ].join(" "),
           ),
+        dryRun: z
+          .boolean()
+          .optional()
+          .describe("Preview the plan without writing files; returns created paths and install commands only."),
       },
     },
     async (args) => {
@@ -111,6 +140,30 @@ function registerGetRecipe(server: McpServer, services: JstServices): void {
     async (args) => {
       try {
         return textResult(await services.getRecipe(args.projectRoot, args.recipe));
+      } catch (error) {
+        return errorResult(error);
+      }
+    },
+  );
+}
+
+function registerGetSection(server: McpServer, services: JstServices): void {
+  server.registerTool(
+    "jst_get_section",
+    {
+      title: "Get an architecture section",
+      description: [
+        "Return the complete, untruncated text of one architecture section from the project's skill.",
+        "Use it when a section returned by jst_start_task is marked truncated.",
+      ].join(" "),
+      inputSchema: {
+        projectRoot: projectRootSchema.describe("Path to the JST project root."),
+        section: sectionNameSchema.describe("Exact section name, e.g. Ownership or DI boundary."),
+      },
+    },
+    async (args) => {
+      try {
+        return textResult(await services.getSection(args.projectRoot, args.section));
       } catch (error) {
         return errorResult(error);
       }

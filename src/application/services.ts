@@ -1,16 +1,17 @@
 import { isAbsolute, relative, resolve } from "node:path";
-import { ProjectError } from "../domain/contracts.js";
+import { ProjectError, SLICE_KINDS } from "../domain/contracts.js";
 import type {
   CheckResult,
   RecipeName,
   RecipeResult,
   ScaffoldSliceResult,
+  SectionResult,
   SelectedSection,
   StartTaskResult,
 } from "../domain/contracts.js";
-import { SLICE_KINDS } from "../domain/contracts.js";
 import { boundText, parseSections } from "../domain/markdown.js";
 import type { MarkdownSection } from "../domain/markdown.js";
+import { getSectionBody } from "./section.js";
 import {
   classifyTask,
   GENERATOR_COMMAND,
@@ -173,8 +174,11 @@ export class JstServices {
         `Recipe "${recipe}" not found in the project-local architecture skill.`,
       );
     }
-    const bounded = boundText(recipeSection.body, SECTION_MAX_CHARS);
-    return { recipe, body: bounded.text, truncated: bounded.truncated };
+    return { recipe, body: recipeSection.body, truncated: false };
+  }
+
+  async getSection(projectRoot: string, section: string): Promise<SectionResult> {
+    return getSectionBody(this.project, this.requireJstProject.bind(this), { projectRoot, section });
   }
 
   private async readSkillSections(root: string): Promise<MarkdownSection[]> {

@@ -109,12 +109,19 @@ export interface ScaffoldSliceResult {
   devDependencies: string[];
   installCommands: string[];
   nextAction: string;
+  dryRun: boolean;
+  installFailed: boolean;
 }
 
 export interface RecipeResult {
   recipe: RecipeName;
   body: string;
   truncated: boolean;
+}
+
+export interface SectionResult {
+  section: string;
+  body: string;
 }
 
 export interface CheckResult {

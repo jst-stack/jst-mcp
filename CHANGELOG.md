@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add `jst_get_section` and stop truncating `jst_get_recipe` so full architecture text is always reachable.
+- Add `dryRun` to `jst_scaffold_slice`; on install failure, retry with `--no-install`, still create the slice, and report `installFailed` with recovery commands.
+- Expose `structuredContent` on tool results to remove double JSON parsing.
+- Register `jst_get_section` in the Pi extension.
+
 ## 0.1.4
 
 - Confine project commands to canonical JST workspace roots, including symlink resolution.

@@ -1,6 +1,6 @@
 # @jst-stack/mcp
 
-MCP server and Pi extension for [JST](https://github.com/jst-stack) architecture workflows. It exposes four operations — start a task, scaffold a slice, fetch a recipe, run a quality gate — by delegating to a project's own `npm run create:slice`, `npm run lint:*`, and `npm run check:*` scripts. It duplicates no JST generator, lint, or architecture policy: architecture guidance is read from each project's local `skills/frontend-architecture/SKILL.md`, and the package embeds only operational mappings (gate-to-script, section selection keywords, CLI-help parsing).
+MCP server and Pi extension for [JST](https://github.com/jst-stack) architecture workflows. It exposes five operations — start a task, scaffold a slice, fetch a recipe, fetch an architecture section, run a quality gate — by delegating to a project's own `npm run create:slice`, `npm run lint:*`, and `npm run check:*` scripts. It duplicates no JST generator, lint, or architecture policy: architecture guidance is read from each project's local `skills/frontend-architecture/SKILL.md`, and the package embeds only operational mappings (gate-to-script, section selection keywords, CLI-help parsing).
 
 ## Requirements
 
@@ -14,9 +14,10 @@ MCP server and Pi extension for [JST](https://github.com/jst-stack) architecture
 | `jst_start_task` | Classify the brief as a direct file/docs change, local UI edit, existing-workflow change, or new boundary; return only its workflow and relevant architecture sections. Generator discovery runs only for a new boundary. |
 | `jst_scaffold_slice` | Validate kind/name/options and invoke the project-local `create:slice` generator; return created paths, exact deferred-install commands, and the next action. |
 | `jst_get_recipe` | Return a project-local implementation recipe, including SSR-safe runtime mocking through an injected repository adapter. |
+| `jst_get_section` | Return the complete, untruncated text of one architecture section; use it when a `jst_start_task` section is marked `truncated`. |
 | `jst_check` | Run an existing npm script (`fix`, `fast`, `architecture`, `release`) and return the exit status, a bounded diagnostic summary, and the prescribed next action. |
 
-Every response is concise JSON. Raw diagnostic output is truncated; no source files are dumped.
+Every response is concise JSON. Raw diagnostic output is truncated; no source files are dumped. Successful results also carry a `structuredContent` object so clients can read the payload without re-parsing the text field.
 
 ## Install: generic MCP clients
 
@@ -49,6 +50,17 @@ Without a global install, configure the executable and arguments separately:
 }
 ```
 
+## One-command registration
+
+Register the `jst` stdio server in `~/.pi/agent/mcp.json` (idempotent; existing servers are preserved):
+
+```bash
+jst-mcp init           # write the config
+jst-mcp init --dry-run # preview the change without writing
+```
+
+It prints the resolved Pi extension path; add it to the `extensions` list in `settings.json` or load it with `pi -e <path>`. Set `JST_MCP_PI_DIR` to target a different Pi config directory.
+
 ## Agent workflow
 
 1. Call `jst_start_task` once with the project root and implementation brief.
@@ -65,13 +77,13 @@ The start response includes a machine-readable `completionRequirement`. A task i
 npm install --save-dev @jst-stack/mcp
 ```
 
-Load the extension (the four tools are registered automatically):
+Load the extension (Pi registers its tools once the extension loads):
 
 ```bash
 pi -e ./node_modules/@jst-stack/mcp/dist/pi/extension.js
 ```
 
-Or reference the package subpath `@jst-stack/mcp/pi` from your Pi extensions configuration. The tools appear as `jst_start_task`, `jst_scaffold_slice`, `jst_get_recipe`, and `jst_check`; `projectRoot` defaults to the session working directory.
+Or reference the package subpath `@jst-stack/mcp/pi` from your Pi extensions configuration. The tools appear as `jst_start_task`, `jst_scaffold_slice`, `jst_get_recipe`, `jst_get_section`, and `jst_check`; `projectRoot` defaults to the session working directory.
 
 ## Architecture
 
@@ -92,6 +104,7 @@ npm run check   # lint + build + test + npm pack --dry-run
 
 ## Known limitations
 
-- `jst_scaffold_slice` runs the generator twice: a `--dry-run` to read the exact file plan, then the real run. With `noInstall`, use the returned exact `installCommands` before running a gate.
+- `jst_scaffold_slice` runs the generator twice: a `--dry-run` to read the exact file plan, then the real run. Set `dryRun: true` to stop after the plan and get `createdPaths` and `installCommands` without writing files. With `noInstall`, use the returned exact `installCommands` before running a gate.
+- If the generator's install phase fails (for example an npm `EOVERRIDE` conflict), `jst_scaffold_slice` retries with `--no-install`, still creates the slice, and returns `installFailed: true` with the exact commands to finish installing.
 - Diagnostic summaries are bounded to the last 4000 characters; full output is not preserved.
-- `jst_start_task` and `jst_get_recipe` require `skills/frontend-architecture/SKILL.md` in the project root. Each returned section is bounded to 1400 characters and the selected section set to 6500 characters.
+- `jst_start_task` and `jst_get_recipe` require `skills/frontend-architecture/SKILL.md` in the project root. In the start response each section is bounded to 1400 characters and the selected set to 6500 characters; call `jst_get_section` for the full, untruncated body. `jst_get_recipe` returns the complete recipe text.

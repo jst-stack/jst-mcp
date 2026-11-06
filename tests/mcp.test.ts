@@ -94,7 +94,7 @@ describe.skipIf(skip)("jst-mcp stdio black-box", () => {
     }
   });
 
-  it("initializes and lists the four tools with input schemas", async () => {
+  it("initializes and lists the five tools with input schemas", async () => {
     server.send({
       jsonrpc: "2.0",
       id: 0,
@@ -113,6 +113,7 @@ describe.skipIf(skip)("jst-mcp stdio black-box", () => {
     expect(tools.map((tool) => tool.name).sort()).toEqual([
       "jst_check",
       "jst_get_recipe",
+      "jst_get_section",
       "jst_scaffold_slice",
       "jst_start_task",
     ]);
@@ -122,6 +123,8 @@ describe.skipIf(skip)("jst-mcp stdio black-box", () => {
 
     const recipe = tools.find((tool) => tool.name === "jst_get_recipe")!;
     expect(recipe.inputSchema?.required).toEqual(["projectRoot", "recipe"]);
+    const section = tools.find((tool) => tool.name === "jst_get_section")!;
+    expect(section.inputSchema?.required).toEqual(["projectRoot", "section"]);
   });
 
   it("calls jst_get_recipe and returns the project-local recipe section", async () => {

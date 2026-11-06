@@ -23,6 +23,11 @@ export const projectRootSchema = z
 
 export const briefSchema = z.string().min(1, "brief is required").max(4000, "brief is too long");
 
+export const sectionNameSchema = z
+  .string()
+  .min(1, "section is required")
+  .max(200, "section is too long");
+
 export const sliceOptionsSchema = z
   .object({
     stateful: z.boolean().optional(),
@@ -45,6 +50,7 @@ export const scaffoldInputSchema = z
     kind: sliceKindSchema,
     name: sliceNameSchema,
     options: sliceOptionsSchema.optional(),
+    dryRun: z.boolean().optional(),
   })
   .strict()
   .superRefine(({ kind, options }, context) => {
@@ -79,6 +85,9 @@ export const scaffoldInputSchema = z
     }
   });
 export const recipeInputSchema = z.object({ projectRoot: projectRootSchema, recipe: recipeNameSchema }).strict();
+export const sectionInputSchema = z
+  .object({ projectRoot: projectRootSchema, section: sectionNameSchema })
+  .strict();
 export const checkInputSchema = z.object({ projectRoot: projectRootSchema, gate: gateNameSchema }).strict();
 
 export function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
