@@ -13,6 +13,8 @@ export interface JstProject {
   scripts: Record<string, string>;
   name: string;
   packageManager: "npm" | "pnpm";
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
 }
 
 export type RequireJstProject = (projectRoot: string) => Promise<JstProject>;

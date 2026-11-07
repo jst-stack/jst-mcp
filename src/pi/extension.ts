@@ -111,7 +111,7 @@ function registerStartTask(pi: PiExtensionApi, runtime: ToolRuntime): void {
     label: "Start JST Task",
     description: [
       "Verify a JST project, read its project-local architecture skill, and return a concise workflow,",
-      "version-local generator capabilities, exact next commands, and relevant architecture sections.",
+      "the declared project stack, generator capabilities, next commands, and relevant architecture sections.",
     ].join(" "),
     promptGuidelines: [
       [

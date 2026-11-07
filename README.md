@@ -61,6 +61,15 @@ jst-mcp init --dry-run # preview the change without writing
 
 It also appends the resolved Pi extension path to the `extensions` array in `~/.pi/agent/settings.json` when absent, preserving existing entries and other keys; a non-array `extensions` value is left untouched. Set `JST_MCP_PI_DIR` to target a different Pi config directory. As a fallback, load the extension with `pi -e <path>`.
 
+From a JST project, create-jst can install the server globally and register it with Pi:
+
+```bash
+create-jst mcp setup --dry-run
+create-jst mcp setup
+```
+
+The MCP reads direct dependencies from the active project's `package.json` on every `jst_start_task` call. It returns them as the current stack, so agents can follow the user's brief without restoring template demo libraries. This avoids a second stack manifest.
+
 ## Agent workflow
 
 1. Call `jst_start_task` once with the project root and implementation brief.
@@ -70,6 +79,8 @@ It also appends the resolved Pi extension path to the `extensions` array in `~/.
 5. Call `jst_check` with `fast` after ordinary work. Use `fix` for mechanical repairs, `architecture` for the complete lint contract, and `release` once at delivery; do not repeat a passing gate or run its internal scripts separately.
 
 The start response includes a machine-readable `completionRequirement`. A task is complete only after the required gate returns `ok: true` and a `completionReceipt`.
+
+The user's brief defines the intended stack. Detected dependencies describe the current implementation; they are not permission to substitute another stack. The `stateful` scaffold option specifically generates Reatom wiring and should only be selected when Reatom is requested or already chosen by the project.
 
 ## Install: Pi
 

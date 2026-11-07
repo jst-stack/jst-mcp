@@ -111,7 +111,18 @@ class FakeProject implements ProjectAccess {
     private readonly skillMarkdown: string = SKILL_MD,
   ) {}
   async readPackageJson(): Promise<unknown> {
-    return { name: "fake-jst", scripts: this.scripts };
+    return {
+      name: "fake-jst",
+      scripts: this.scripts,
+      dependencies: {
+        react: "^19.0.0",
+        "react-router": "^8.0.0",
+        zustand: "^5.0.0",
+        "@tanstack/react-query": "^5.0.0",
+      },
+      devDependencies: { tailwindcss: "^4.0.0" },
+      packageManager: "pnpm@10.0.0",
+    };
   }
   async isDirectory(): Promise<boolean> {
     return this.isDir;
@@ -180,6 +191,9 @@ describe("jst_start_task", () => {
     });
     expect(result.project.name).toBe("fake-jst");
     expect(result.project.root).toBe(WORK_ROOT);
+    expect(result.project.stack.packages).toContain("zustand");
+    expect(result.project.stack.packages).toContain("zustand");
+    expect(result.project.stack.packages).toContain("tailwindcss");
     expect(result.taskKind).toBe("new-boundary");
     expect(result.agentRules).toContainEqual(
       expect.stringContaining("do not reread"),
@@ -187,7 +201,6 @@ describe("jst_start_task", () => {
     expect(result.agentRules).toContainEqual(
       expect.stringContaining("current owner"),
     );
-    expect(result.workflow.length).toBeGreaterThan(0);
     expect(result.workflow).toContainEqual(
       expect.stringContaining("jst_scaffold_slice"),
     );
@@ -223,6 +236,7 @@ describe("jst_start_task", () => {
       "--help",
     ]);
   });
+
 
   it("keeps a local styling task concise and skips generator discovery", async () => {
     const runner = new RecordingRunner();

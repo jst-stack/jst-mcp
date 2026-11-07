@@ -86,8 +86,13 @@ export interface GeneratorCapabilities {
   options: string[];
 }
 
+export interface ProjectStack {
+  packages: string[];
+  truncated: boolean;
+}
+
 export interface StartTaskResult {
-  project: { root: string; name: string };
+  project: { root: string; name: string; stack: ProjectStack };
   taskKind: TaskKind;
   agentRules: string[];
   workflow: string[];
