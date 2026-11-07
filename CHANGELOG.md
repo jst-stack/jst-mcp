@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6
+
+- `jst_start_task` reports the project's bounded direct-dependency stack so an agent starts from the real stack instead of the starter defaults, and the workflow says to keep the requested stack.
+- The workflow states that the stateful scaffold is Reatom-specific.
+- Project validation moved into a focused application helper.
+
 ## 0.1.5
 
 - Add `jst_get_section` and stop truncating `jst_get_recipe` so full architecture text is always reachable.
