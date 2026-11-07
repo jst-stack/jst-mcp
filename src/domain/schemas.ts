@@ -30,7 +30,10 @@ export const sectionNameSchema = z
 
 export const sliceOptionsSchema = z
   .object({
-    stateful: z.boolean().optional(),
+    stateful: z
+      .boolean()
+      .optional()
+      .describe("Creates Reatom-specific store wiring; omit for other state managers."),
     repository: z.boolean().optional(),
     service: z.boolean().optional(),
     persistence: z.boolean().optional(),

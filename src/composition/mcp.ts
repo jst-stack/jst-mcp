@@ -68,7 +68,7 @@ function registerStartTask(server: McpServer, services: JstServices): void {
       title: "Start a JST task",
       description: [
         "Start every JST implementation here. Returns the project-local contract, relevant architecture sections,",
-        "and agentRules that replace broad documentation, generator, linter, framework, and dependency discovery.",
+        "the project's declared dependency stack and relevant architecture sections.",
         "If a returned section is truncated, call jst_get_section for its full text.",
       ].join(" "),
       inputSchema: {
@@ -104,7 +104,7 @@ function registerScaffoldSlice(server: McpServer, services: JstServices): void {
           .describe(
             [
               "Generator flags. repository, service, persistence, and msw are entity-only;",
-              "msw requires repository; stateful is unavailable for widgets.",
+              "msw requires repository; stateful is Reatom-specific and unavailable for widgets.",
             ].join(" "),
           ),
         dryRun: z

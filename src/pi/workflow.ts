@@ -2,6 +2,11 @@ export const PI_JST_WORKFLOW = [
   "JST project workflow:",
   "- Call jst_start_task before implementation and follow its task-specific workflow.",
   [
+    "- Preserve the requested stack; do not replace absent starter-demo libraries or add alternatives",
+    "without user direction.",
+  ].join(" "),
+  "- The stateful scaffold is Reatom-specific; omit it for projects using another state manager.",
+  [
     "- Do not reread AGENTS.md, the architecture skill, docs, configuration, generator/linter source,",
     "framework internals, or dependency source after jst_start_task.",
   ].join(" "),

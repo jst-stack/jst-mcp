@@ -1,4 +1,4 @@
-import { isAbsolute, relative, resolve } from "node:path";
+import { resolve } from "node:path";
 import { ProjectError, SLICE_KINDS } from "../domain/contracts.js";
 import type {
   CheckResult,
@@ -27,10 +27,11 @@ import {
   startTaskInputSchema,
 } from "../domain/schemas.js";
 import { checkProject } from "./check.js";
-import type { JstProject } from "./check.js";
 import type { CommandRunner, ProjectAccess } from "./ports.js";
 import { npmCommand } from "./gate.js";
 import { scaffoldSlice } from "./scaffoldSlice.js";
+import { projectStack } from "../domain/projectStack.js";
+import { requireJstProject } from "./project.js";
 
 const DEFAULT_TIMEOUT_MS = 5 * 60_000;
 const SECTION_MAX_CHARS = 1_400;
@@ -47,6 +48,8 @@ const AGENT_RULES = [
     "or full-E2E stages separately.",
   ].join(" "),
   "The task is incomplete until jst_check returns ok: true for the required fast gate.",
+  "Follow the user's requested stack; preserve it and never restore template demo libraries.",
+  "The stateful scaffold is Reatom-only; omit it for other state managers.",
 ] as const;
 
 export class JstServices {
@@ -56,70 +59,9 @@ export class JstServices {
     private readonly cwd: string,
   ) {}
 
-  private resolveRoot(projectRoot: string): string {
-    return resolve(this.cwd, projectRoot);
-  }
-
-  private async resolveProjectRoot(projectRoot: string): Promise<string> {
-    const candidate = this.resolveRoot(projectRoot);
-    if (!(await this.project.isDirectory(candidate))) {
-      throw new ProjectError(`Project root is not a directory: ${candidate}`);
-    }
-    const [workspaceRoot, root] = await Promise.all([
-      this.project.realPath(this.cwd),
-      this.project.realPath(candidate),
-    ]);
-    const workspaceRelativePath = relative(workspaceRoot, root);
-    if (
-      workspaceRelativePath === ".." ||
-      workspaceRelativePath.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) ||
-      isAbsolute(workspaceRelativePath)
-    ) {
-      throw new ProjectError(`Project root must stay inside the MCP workspace: ${workspaceRoot}`);
-    }
-    return root;
-  }
-
-  private async requireJstProject(projectRoot: string): Promise<JstProject> {
-    const root = await this.resolveProjectRoot(projectRoot);
-    let pkg: unknown;
-    try {
-      pkg = await this.project.readPackageJson(root);
-    } catch {
-      throw new ProjectError(`package.json not found at ${root}`);
-    }
-    if (typeof pkg !== "object" || pkg === null) {
-      throw new ProjectError(`Invalid package.json at ${root}`);
-    }
-    const record = pkg as Record<string, unknown>;
-    const scripts = record.scripts;
-    if (typeof scripts !== "object" || scripts === null) {
-      throw new ProjectError(`No "scripts" section in ${root}/package.json`);
-    }
-    const scriptRecord = scripts as Record<string, string>;
-    if (typeof scriptRecord["create:slice"] !== "string") {
-      throw new ProjectError(
-        `Not a JST project (${root}): missing "create:slice" script. Scaffold it with create-jst first.`,
-      );
-    }
-    for (const marker of ["jst.config.ts", SKILL_RELATIVE_PATH]) {
-      try {
-        await this.project.readTextFile(resolve(root, marker));
-      } catch {
-        throw new ProjectError(`Not a JST project (${root}): missing ${marker}.`);
-      }
-    }
-    const name = typeof record.name === "string" ? record.name : "jst-project";
-    const packageManager =
-      typeof record.packageManager === "string" && record.packageManager.startsWith("pnpm@")
-        ? "pnpm"
-        : "npm";
-    return { root, scripts: scriptRecord, name, packageManager };
-  }
-
   async startTask(input: unknown): Promise<StartTaskResult> {
     const { projectRoot, brief } = parseInput(startTaskInputSchema, input);
-    const project = await this.requireJstProject(projectRoot);
+    const project = await requireJstProject(this.project, this.cwd, projectRoot);
     const sections = await this.readSkillSections(project.root);
     const taskKind = classifyTask(brief);
     const task = taskWorkflow(taskKind);
@@ -132,7 +74,11 @@ export class JstServices {
     );
     const recipes = this.readRecipes(sections, selectRecipeNames(brief));
     return {
-      project: { root: project.root, name: project.name },
+      project: {
+        root: project.root,
+        name: project.name,
+        stack: projectStack(project.dependencies, project.devDependencies),
+      },
       taskKind,
       agentRules: [...AGENT_RULES],
       workflow: task.workflow,
@@ -156,7 +102,7 @@ export class JstServices {
       projectRoot,
       recipe,
     });
-    const project = await this.requireJstProject(root);
+    const project = await requireJstProject(this.project, this.cwd, root);
     const sections = await this.readSkillSections(project.root);
     const recipesSection = sections.find(
       (section) => section.name === RECIPES_SECTION,
@@ -178,7 +124,11 @@ export class JstServices {
   }
 
   async getSection(projectRoot: string, section: string): Promise<SectionResult> {
-    return getSectionBody(this.project, this.requireJstProject.bind(this), { projectRoot, section });
+    return getSectionBody(
+      this.project,
+      (root) => requireJstProject(this.project, this.cwd, root),
+      { projectRoot, section },
+    );
   }
 
   private async readSkillSections(root: string): Promise<MarkdownSection[]> {
@@ -255,10 +205,18 @@ export class JstServices {
   }
 
   async scaffoldSlice(input: unknown): Promise<ScaffoldSliceResult> {
-    return scaffoldSlice(this.runner, this.requireJstProject.bind(this), input);
+    return scaffoldSlice(
+      this.runner,
+      (root) => requireJstProject(this.project, this.cwd, root),
+      input,
+    );
   }
 
   async check(input: unknown): Promise<CheckResult> {
-    return checkProject(this.runner, this.requireJstProject.bind(this), input);
+    return checkProject(
+      this.runner,
+      (root) => requireJstProject(this.project, this.cwd, root),
+      input,
+    );
   }
 }
